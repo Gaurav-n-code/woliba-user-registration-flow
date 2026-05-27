@@ -36,7 +36,7 @@ const Input = ({
           style={{ color: '#4b5563' }}
         >
           {label}
-          {required && <span className="text-red-500 ml-0.5">*</span>}
+          {/* {required && <span className="text-red-500 ml-0.5">*</span>} */}
         </label>
       )}
 

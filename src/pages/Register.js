@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { verifyCompany, clearVerifyError } from '../redux/slices/authSlice';
+import {
+  verifyCompany,
+  saveUserDetails,
+  clearVerifyError,
+} from '../redux/slices/authSlice';
 import { passwordRules, validateStep2 } from '../utils/validators';
 import AuthLayout from '../components/layout/AuthLayout';
 import Input from '../components/common/Input';
@@ -35,41 +39,53 @@ const PasswordRule = ({ passed, label }) => (
 
 /* ══════════════════════════════════════════════════════════════
    REGISTRATION PAGE
-   Step 1 — Verify Company Name & Password
+   Step 1 — Verify Company Name & Password  (API: verify-by-company-name-and-password)
+   Step 2 — Enter User Details              (API: save-user-details-and-send-otp)
 ══════════════════════════════════════════════════════════════ */
 const Register = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { verifyLoading, verifyError } = useSelector((s) => s.auth);
 
-  const [companyName,     setCompanyName]     = useState('');
+  const {
+    verifyCompanyLoading,
+    verifyCompanyError,
+    saveDetailsLoading,
+    saveDetailsError,
+    registrationForm,
+  } = useSelector((s) => s.auth);
+
+  /* ── Step 1 local state ── */
+  const [companyName,     setCompanyName]     = useState(registrationForm.companyName || '');
   const [companyPassword, setCompanyPassword] = useState('');
   const [nameError,       setNameError]       = useState('');
   const [pwTouched,       setPwTouched]       = useState(false);
-  const [step,            setStep]            = useState(1);
-  const [email,           setEmail]           = useState('');
-  const [firstName,       setFirstName]       = useState('');
-  const [lastName,        setLastName]        = useState('');
-  const [step2Errors,     setStep2Errors]     = useState({});
 
-  /* ── Derived password rule states ──────── */
+  /* ── Step 2 local state ── */
+  const [step,        setStep]        = useState(1);
+  const [email,       setEmail]       = useState(registrationForm.email || '');
+  const [firstName,   setFirstName]   = useState(registrationForm.firstName || '');
+  const [lastName,    setLastName]    = useState(registrationForm.lastName || '');
+  const [step2Errors, setStep2Errors] = useState({});
+
+  /* ── Derived password rule states ── */
   const rules = [
     { key: 'len', label: 'Minimum 8 characters',       passed: passwordRules.minLength(companyPassword)    },
     { key: 'upp', label: 'At least 1 uppercase letter', passed: passwordRules.hasUppercase(companyPassword) },
     { key: 'num', label: 'At least 1 number',           passed: passwordRules.hasNumber(companyPassword)    },
   ];
-
   const allRulesMet = rules.every((r) => r.passed);
   const nameValid   = companyName.trim().length >= 2;
-
-  /* Next button is enabled only when both conditions are fully met */
   const canSubmit   = nameValid && allRulesMet;
 
-  /* ── Handlers ────────────────────────── */
+  const isStep1Loading = verifyCompanyLoading;
+  const isStep2Loading = saveDetailsLoading;
+  const currentError   = step === 1 ? verifyCompanyError : saveDetailsError;
+
+  /* ── Step 1 handlers ── */
   const handleNameChange = (e) => {
     setCompanyName(e.target.value);
-    if (nameError) setNameError('');                   // clear error on correction
-    if (verifyError) dispatch(clearVerifyError());
+    if (nameError) setNameError('');
+    if (verifyCompanyError) dispatch(clearVerifyError());
   };
 
   const handleNameBlur = () => {
@@ -81,64 +97,61 @@ const Register = () => {
 
   const handlePasswordChange = (e) => {
     setCompanyPassword(e.target.value);
-    if (!pwTouched) setPwTouched(true);                // reveal rules on first keystroke
-    if (verifyError) dispatch(clearVerifyError());
+    if (!pwTouched) setPwTouched(true);
+    if (verifyCompanyError) dispatch(clearVerifyError());
   };
 
-  const handleEmailChange = (e) => {
-    setEmail(e.target.value);
-    setStep2Errors((prev) => ({ ...prev, email: undefined }));
-  };
+  /* ── Step 2 handlers ── */
+  const handleEmailChange     = (e) => { setEmail(e.target.value);     setStep2Errors((p) => ({ ...p, email:     undefined })); };
+  const handleFirstNameChange = (e) => { setFirstName(e.target.value); setStep2Errors((p) => ({ ...p, firstName: undefined })); };
+  const handleLastNameChange  = (e) => { setLastName(e.target.value);  setStep2Errors((p) => ({ ...p, lastName:  undefined })); };
 
-  const handleFirstNameChange = (e) => {
-    setFirstName(e.target.value);
-    setStep2Errors((prev) => ({ ...prev, firstName: undefined }));
-  };
-
-  const handleLastNameChange = (e) => {
-    setLastName(e.target.value);
-    setStep2Errors((prev) => ({ ...prev, lastName: undefined }));
-  };
-
+  /* ── Submit ── */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (step === 1) {
       if (!canSubmit) return;
-
       try {
         await dispatch(
-          verifyCompany({ companyName: companyName.trim(), password: companyPassword })
+          verifyCompany({ company_name: companyName.trim(), password: companyPassword })
         ).unwrap();
         setStep(2);
         setPwTouched(false);
-      } catch (_) {
-        /* verifyError is already set in Redux — shown in Alert */
-      }
+      } catch (_) { /* verifyCompanyError shown via Alert */ }
       return;
     }
 
+    /* Step 2 */
     const errors = validateStep2({ firstName, lastName, email, companyName });
-
-    if (Object.keys(errors).length) {
-      setStep2Errors(errors);
-      return;
-    }
-
+    if (Object.keys(errors).length) { setStep2Errors(errors); return; }
     setStep2Errors({});
-    // At this point the second step is valid; continue to the next action.
-    // Example: dispatch(registerUser({ companyName, firstName, lastName, email }))
-    navigate('/verify-code', {
-      state: { companyName, email, firstName, lastName },
-    });
+
+    try {
+      await dispatch(
+        saveUserDetails({
+          company_id: registrationForm.companyId,
+          mail:       email.trim(),
+          fname:      firstName.trim(),
+          lname:      lastName.trim(),
+        })
+      ).unwrap();
+      navigate('/verify-code');
+    } catch (_) { /* saveDetailsError shown via Alert */ }
   };
 
-  /* ── Render ──────────────────────────── */
+  /* ── Button state ── */
+  const loading  = step === 1 ? isStep1Loading : isStep2Loading;
+  const disabled = step === 1 ? (!canSubmit || loading) : loading;
+  const btnLabel = loading
+    ? (step === 1 ? 'Verifying…' : 'Sending OTP…')
+    : (step === 1 ? 'Next' : 'Send OTP');
+
+  /* ── Render ── */
   return (
     <AuthLayout>
       <form onSubmit={handleSubmit} noValidate>
 
-        {/* ── Title ── */}
         <h2
           className="text-center font-bold mb-6"
           style={{ color: '#1a3353', fontSize: '22px' }}
@@ -146,16 +159,16 @@ const Register = () => {
           Registration
         </h2>
 
-        {/* ── API error banner ── */}
-        {verifyError && step === 1 && (
+        {/* API error banner */}
+        {currentError && (
           <div className="mb-4">
-            <Alert type="error" message={verifyError} />
+            <Alert type="error" message={currentError} />
           </div>
         )}
 
         {step === 1 ? (
           <>
-            {/* ── Company Name ── */}
+            {/* Company Name */}
             <div className="mb-4">
               <label
                 htmlFor="companyName"
@@ -172,7 +185,7 @@ const Register = () => {
                 placeholder="Enter Company Name"
                 autoFocus
                 autoComplete="organization"
-                disabled={verifyLoading}
+                disabled={loading}
                 style={{
                   width:           '100%',
                   border:          `1px solid ${nameError ? '#f87171' : '#d1d5db'}`,
@@ -183,19 +196,17 @@ const Register = () => {
                   outline:         'none',
                   transition:      'border-color 0.15s',
                   boxSizing:       'border-box',
-                  backgroundColor: verifyLoading ? '#f9fafb' : '#fff',
+                  backgroundColor: loading ? '#f9fafb' : '#fff',
                 }}
                 onFocus={(e) => { if (!nameError) e.target.style.borderColor = '#60a5fa'; }}
                 onBlurCapture={(e) => { if (!nameError) e.target.style.borderColor = '#d1d5db'; }}
               />
               {nameError && (
-                <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '5px' }}>
-                  {nameError}
-                </p>
+                <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '5px' }}>{nameError}</p>
               )}
             </div>
 
-            {/* ── Company Password ── */}
+            {/* Company Password */}
             <div className={pwTouched && !allRulesMet ? 'mb-3' : 'mb-6'}>
               <label
                 htmlFor="companyPassword"
@@ -211,16 +222,12 @@ const Register = () => {
                 onChange={handlePasswordChange}
                 placeholder="Enter Company Password"
                 eyeColor="#E05252"
-                disabled={verifyLoading}
+                disabled={loading}
                 autoComplete="new-password"
               />
             </div>
 
-            {/* ── Password rules ─────────────────────────────────────────
-                · Hidden before user types (pwTouched = false)
-                · Shown while any rule is unmet — each turns green as it passes
-                · Hidden again once ALL rules are met (clean UI before submit)
-            ──────────────────────────────────────────────────────────── */}
+            {/* Password rules — hidden until typing, and once all pass */}
             {pwTouched && !allRulesMet && (
               <ul className="flex flex-col gap-2 mb-5 pl-0.5">
                 {rules.map((r) => (
@@ -241,6 +248,7 @@ const Register = () => {
                 placeholder="Enter email id"
                 error={step2Errors.email}
                 autoComplete="email"
+                disabled={loading}
               />
             </div>
 
@@ -254,6 +262,7 @@ const Register = () => {
                 placeholder="Enter First name"
                 error={step2Errors.firstName}
                 autoComplete="given-name"
+                disabled={loading}
               />
             </div>
 
@@ -267,6 +276,7 @@ const Register = () => {
                 placeholder="Enter Last name"
                 error={step2Errors.lastName}
                 autoComplete="family-name"
+                disabled={loading}
               />
             </div>
 
@@ -275,23 +285,18 @@ const Register = () => {
                 label="Company name"
                 name="companyNameStep2"
                 type="text"
-                value={companyName}
-                placeholder="Enter Company name"
-                error={step2Errors.companyName}
-                autoComplete="organization"
+                value={registrationForm.companyName || companyName}
+                placeholder="Company name"
                 disabled
               />
             </div>
           </>
         )}
 
-        {/* ── Next button ────────────────────────────────────────────
-            DISABLED  → light gray bg, gray text, not-allowed cursor
-            ENABLED   → coral bg (#E05252), white text (#FEFEFE), pointer
-        ──────────────────────────────────────────────────────────── */}
+        {/* Next / Send OTP button */}
         <button
           type="submit"
-          disabled={step === 1 ? !canSubmit || verifyLoading : verifyLoading}
+          disabled={disabled}
           style={{
             display:         'flex',
             alignItems:      'center',
@@ -303,27 +308,19 @@ const Register = () => {
             border:          'none',
             fontSize:        '15px',
             fontWeight:      600,
-            cursor:          step === 1
-              ? canSubmit && !verifyLoading ? 'pointer' : 'not-allowed'
-              : verifyLoading ? 'not-allowed' : 'pointer',
-            transition:      'background-color 0.2s, color 0.2s',
-            /* Enabled: coral / Disabled: light gray */
-            backgroundColor: step === 1
-              ? canSubmit && !verifyLoading ? '#E05252' : '#e5e7eb'
-              : verifyLoading ? '#e5e7eb' : '#E05252',
-            color:           step === 1
-              ? canSubmit && !verifyLoading ? '#FEFEFE' : '#9ca3af'
-              : verifyLoading ? '#9ca3af' : '#FEFEFE',
+            cursor:          disabled ? 'not-allowed' : 'pointer',
+            transition:      'background-color 0.2s',
+            backgroundColor: disabled ? '#e5e7eb' : '#E05252',
+            color:           disabled ? '#9ca3af' : '#FEFEFE',
           }}
         >
-          {/* Spinner shown only during API call */}
-          {verifyLoading && (
+          {loading && (
             <span
               className="inline-block h-4 w-4 rounded-full border-2 animate-spin"
               style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }}
             />
           )}
-          {verifyLoading ? 'Verifying…' : step === 1 ? 'Next' : 'Verify email'}
+          {btnLabel}
         </button>
 
       </form>
