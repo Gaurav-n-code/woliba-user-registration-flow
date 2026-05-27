@@ -1,276 +1,332 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { registerUser, clearError, clearRegistrationSuccess } from '../redux/slices/authSlice';
-import { validateStep1, validateStep2 } from '../utils/validators';
+import { useNavigate } from 'react-router-dom';
+import { verifyCompany, clearVerifyError } from '../redux/slices/authSlice';
+import { passwordRules, validateStep2 } from '../utils/validators';
 import AuthLayout from '../components/layout/AuthLayout';
 import Input from '../components/common/Input';
-import Button from '../components/common/Button';
 import Alert from '../components/common/Alert';
 
-/* ── Constants ───────────────────────────── */
-/* ── Initial State ───────────────────────── */
-const INIT_STEP1 = { companyName: '', companyPassword: '' };
-const INIT_STEP2 = { firstName: '', lastName: '', email: '', phone: '' };
-
-/* ── Component ───────────────────────────── */
-const Register = () => {
-  const dispatch  = useDispatch();
-  const navigate  = useNavigate();
-  const { loading, error, registrationSuccess } = useSelector((s) => s.auth);
-
-  const [step,        setStep]        = useState(0);   // 0 = company creds, 1 = admin details
-  const [step1,       setStep1]       = useState(INIT_STEP1);
-  const [step2,       setStep2]       = useState(INIT_STEP2);
-  const [fieldErrors, setFieldErrors] = useState({});
-
-  /* ── Side effects ────────────────────── */
-  useEffect(() => {
-    if (registrationSuccess) setStep(2);            // show success screen
-  }, [registrationSuccess]);
-
-  useEffect(() => {
-    if (error) dispatch(clearError());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step1, step2]);
-
-  /* ── Handlers ────────────────────────── */
-  const handleChange = (setter) => (e) => {
-    const { name, value } = e.target;
-    setter((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) setFieldErrors((p) => ({ ...p, [name]: '' }));
-  };
-
-  /** Step 0 → 1 */
-  const handleNext = (e) => {
-    e.preventDefault();
-    const errors = validateStep1(step1);
-    if (Object.keys(errors).length) { setFieldErrors(errors); return; }
-    setFieldErrors({});
-    setCurrentStep(1);
-  };
-
-  /** Step 1 → submit */
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const errors = validateStep2(step2);
-    if (Object.keys(errors).length) { setFieldErrors(errors); return; }
-
-    dispatch(registerUser({
-      company_name:     step1.companyName.trim(),
-      company_password: step1.companyPassword,
-      first_name:       step2.firstName.trim(),
-      last_name:        step2.lastName.trim(),
-      email:            step2.email.trim().toLowerCase(),
-      phone:            step2.phone.trim(),
-    }));
-  };
-
-  const setCurrentStep = (n) => { setStep(n); setFieldErrors({}); dispatch(clearError()); };
-
-  /* ── Step 0: Company credentials (matches Figma) ── */
-  const renderStep0 = () => (
-    <form onSubmit={handleNext} noValidate>
-      <h2
-        className="text-center font-semibold mb-6"
-        style={{ color: '#1a2b4b', fontSize: '22px' }}
-      >
-        Registration
-      </h2>
-
-      <Alert type="error" message={error} />
-
-      {/* Company Name */}
-      <div className="mb-4">
-        <label
-          htmlFor="companyName"
-          className="block text-sm mb-1"
-          style={{ color: '#4b5563' }}
+/* ── Password rule indicator ──────────────────────────────────── */
+const PasswordRule = ({ passed, label }) => (
+  <li className="flex items-center gap-2">
+    <span
+      className={`
+        inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center
+        rounded-full border transition-all duration-200
+        ${passed ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'}
+      `}
+    >
+      {passed && (
+        <svg
+          className="h-[7px] w-[7px] text-white"
+          fill="none" viewBox="0 0 24 24"
+          stroke="currentColor" strokeWidth={4}
         >
-          Company Name
-        </label>
-        <input
-          id="companyName"
-          name="companyName"
-          type="text"
-          value={step1.companyName}
-          onChange={handleChange(setStep1)}
-          placeholder="Enter Company Name"
-          autoFocus
-          className={`w-full border rounded-md px-3 py-2.5 text-sm
-            placeholder-gray-400 focus:outline-none focus:ring-1 transition
-            ${fieldErrors.companyName
-              ? 'border-red-400 focus:ring-red-400'
-              : 'border-gray-300 focus:ring-blue-400'}`}
-        />
-        {fieldErrors.companyName && (
-          <p className="text-red-500 text-xs mt-1">{fieldErrors.companyName}</p>
-        )}
-      </div>
-
-      {/* Company Password */}
-      <div className="mb-6">
-        <label
-          htmlFor="companyPassword"
-          className="block text-sm mb-1"
-          style={{ color: '#4b5563' }}
-        >
-          Company Password
-        </label>
-        <Input
-          id="companyPassword"
-          name="companyPassword"
-          type="password"
-          value={step1.companyPassword}
-          onChange={handleChange(setStep1)}
-          placeholder="Enter Company Password"
-          error={fieldErrors.companyPassword}
-          eyeColor="#E05252"
-        />
-      </div>
-
-      {/* Next button — matches Figma grey style */}
-      <button
-        type="submit"
-        className="w-full rounded-md py-2.5 text-sm font-medium transition
-          focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-gray-400"
-        style={{ backgroundColor: '#d1d5db', color: '#374151' }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#9ca3af')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#d1d5db')}
-      >
-        Next
-      </button>
-
-      {/* Sign in link */}
-      <p className="mt-5 text-center text-sm text-gray-500">
-        Already have an account?{' '}
-        <Link
-          to="/login"
-          className="font-medium hover:underline"
-          style={{ color: '#E05252' }}
-        >
-          Sign In
-        </Link>
-      </p>
-    </form>
-  );
-
-  /* ── Step 1: Admin / contact details ── */
-  const renderStep1 = () => (
-    <form onSubmit={handleSubmit} noValidate>
-      <h2
-        className="text-center font-semibold mb-1"
-        style={{ color: '#1a2b4b', fontSize: '22px' }}
-      >
-        Contact Details
-      </h2>
-      <p className="text-center text-xs text-gray-400 mb-6">
-        Tell us about the account administrator
-      </p>
-
-      <Alert type="error" message={error} />
-
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Input
-          label="First Name"
-          name="firstName"
-          value={step2.firstName}
-          onChange={handleChange(setStep2)}
-          error={fieldErrors.firstName}
-          placeholder="John"
-          required
-          autoFocus
-        />
-        <Input
-          label="Last Name"
-          name="lastName"
-          value={step2.lastName}
-          onChange={handleChange(setStep2)}
-          error={fieldErrors.lastName}
-          placeholder="Doe"
-          required
-        />
-      </div>
-
-      <div className="mb-4">
-        <Input
-          label="Email Address"
-          name="email"
-          type="email"
-          value={step2.email}
-          onChange={handleChange(setStep2)}
-          error={fieldErrors.email}
-          placeholder="you@company.com"
-          required
-          autoComplete="email"
-        />
-      </div>
-
-      <div className="mb-6">
-        <Input
-          label="Phone Number"
-          name="phone"
-          type="tel"
-          value={step2.phone}
-          onChange={handleChange(setStep2)}
-          error={fieldErrors.phone}
-          placeholder="+1 (555) 000-0000"
-          required
-        />
-      </div>
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => setCurrentStep(0)}
-          disabled={loading}
-          className="flex-1 border border-gray-300 rounded-md py-2.5 text-sm
-            font-medium text-gray-600 hover:bg-gray-50 transition focus:outline-none"
-        >
-          ← Back
-        </button>
-        <Button type="submit" loading={loading} disabled={loading} className="flex-1">
-          {loading ? 'Creating…' : 'Create Account'}
-        </Button>
-      </div>
-    </form>
-  );
-
-  /* ── Step 2: Success screen ── */
-  const renderSuccess = () => (
-    <div className="text-center py-4 space-y-4">
-      <div className="inline-flex h-16 w-16 items-center justify-center
-        rounded-full bg-green-100 mx-auto">
-        <svg className="h-8 w-8 text-green-600" fill="none"
-          viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
         </svg>
-      </div>
-      <div>
-        <h3 className="text-xl font-bold" style={{ color: '#1a2b4b' }}>
-          Account Created!
-        </h3>
-        <p className="text-sm text-gray-500 mt-2">
-          Welcome to Woliba,{' '}
-          <strong>{step1.companyName}</strong>!
-          <br />Your account has been successfully created.
-        </p>
-      </div>
-      <button
-        onClick={() => { dispatch(clearRegistrationSuccess()); navigate('/login'); }}
-        className="w-full rounded-md py-2.5 text-sm font-semibold text-white transition"
-        style={{ backgroundColor: '#E05252' }}
-      >
-        Go to Sign In
-      </button>
-    </div>
-  );
+      )}
+    </span>
+    <span className={`text-xs transition-colors duration-200 ${passed ? 'text-green-600' : 'text-gray-400'}`}>
+      {label}
+    </span>
+  </li>
+);
 
+/* ══════════════════════════════════════════════════════════════
+   REGISTRATION PAGE
+   Step 1 — Verify Company Name & Password
+══════════════════════════════════════════════════════════════ */
+const Register = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { verifyLoading, verifyError } = useSelector((s) => s.auth);
+
+  const [companyName,     setCompanyName]     = useState('');
+  const [companyPassword, setCompanyPassword] = useState('');
+  const [nameError,       setNameError]       = useState('');
+  const [pwTouched,       setPwTouched]       = useState(false);
+  const [step,            setStep]            = useState(1);
+  const [email,           setEmail]           = useState('');
+  const [firstName,       setFirstName]       = useState('');
+  const [lastName,        setLastName]        = useState('');
+  const [step2Errors,     setStep2Errors]     = useState({});
+
+  /* ── Derived password rule states ──────── */
+  const rules = [
+    { key: 'len', label: 'Minimum 8 characters',       passed: passwordRules.minLength(companyPassword)    },
+    { key: 'upp', label: 'At least 1 uppercase letter', passed: passwordRules.hasUppercase(companyPassword) },
+    { key: 'num', label: 'At least 1 number',           passed: passwordRules.hasNumber(companyPassword)    },
+  ];
+
+  const allRulesMet = rules.every((r) => r.passed);
+  const nameValid   = companyName.trim().length >= 2;
+
+  /* Next button is enabled only when both conditions are fully met */
+  const canSubmit   = nameValid && allRulesMet;
+
+  /* ── Handlers ────────────────────────── */
+  const handleNameChange = (e) => {
+    setCompanyName(e.target.value);
+    if (nameError) setNameError('');                   // clear error on correction
+    if (verifyError) dispatch(clearVerifyError());
+  };
+
+  const handleNameBlur = () => {
+    if (!companyName.trim())
+      setNameError('Company name is required.');
+    else if (companyName.trim().length < 2)
+      setNameError('Company name must be at least 2 characters.');
+  };
+
+  const handlePasswordChange = (e) => {
+    setCompanyPassword(e.target.value);
+    if (!pwTouched) setPwTouched(true);                // reveal rules on first keystroke
+    if (verifyError) dispatch(clearVerifyError());
+  };
+
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+    setStep2Errors((prev) => ({ ...prev, email: undefined }));
+  };
+
+  const handleFirstNameChange = (e) => {
+    setFirstName(e.target.value);
+    setStep2Errors((prev) => ({ ...prev, firstName: undefined }));
+  };
+
+  const handleLastNameChange = (e) => {
+    setLastName(e.target.value);
+    setStep2Errors((prev) => ({ ...prev, lastName: undefined }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (step === 1) {
+      if (!canSubmit) return;
+
+      try {
+        await dispatch(
+          verifyCompany({ companyName: companyName.trim(), password: companyPassword })
+        ).unwrap();
+        setStep(2);
+        setPwTouched(false);
+      } catch (_) {
+        /* verifyError is already set in Redux — shown in Alert */
+      }
+      return;
+    }
+
+    const errors = validateStep2({ firstName, lastName, email, companyName });
+
+    if (Object.keys(errors).length) {
+      setStep2Errors(errors);
+      return;
+    }
+
+    setStep2Errors({});
+    // At this point the second step is valid; continue to the next action.
+    // Example: dispatch(registerUser({ companyName, firstName, lastName, email }))
+    navigate('/verify-code', {
+      state: { companyName, email, firstName, lastName },
+    });
+  };
+
+  /* ── Render ──────────────────────────── */
   return (
     <AuthLayout>
-      {step === 0 && renderStep0()}
-      {step === 1 && renderStep1()}
-      {step === 2 && renderSuccess()}
+      <form onSubmit={handleSubmit} noValidate>
+
+        {/* ── Title ── */}
+        <h2
+          className="text-center font-bold mb-6"
+          style={{ color: '#1a3353', fontSize: '22px' }}
+        >
+          Registration
+        </h2>
+
+        {/* ── API error banner ── */}
+        {verifyError && step === 1 && (
+          <div className="mb-4">
+            <Alert type="error" message={verifyError} />
+          </div>
+        )}
+
+        {step === 1 ? (
+          <>
+            {/* ── Company Name ── */}
+            <div className="mb-4">
+              <label
+                htmlFor="companyName"
+                style={{ display: 'block', fontSize: '13px', color: '#374151', fontWeight: 500, marginBottom: '6px' }}
+              >
+                Company Name
+              </label>
+              <input
+                id="companyName"
+                type="text"
+                value={companyName}
+                onChange={handleNameChange}
+                onBlur={handleNameBlur}
+                placeholder="Enter Company Name"
+                autoFocus
+                autoComplete="organization"
+                disabled={verifyLoading}
+                style={{
+                  width:           '100%',
+                  border:          `1px solid ${nameError ? '#f87171' : '#d1d5db'}`,
+                  borderRadius:    '6px',
+                  padding:         '10px 14px',
+                  fontSize:        '14px',
+                  color:           '#111827',
+                  outline:         'none',
+                  transition:      'border-color 0.15s',
+                  boxSizing:       'border-box',
+                  backgroundColor: verifyLoading ? '#f9fafb' : '#fff',
+                }}
+                onFocus={(e) => { if (!nameError) e.target.style.borderColor = '#60a5fa'; }}
+                onBlurCapture={(e) => { if (!nameError) e.target.style.borderColor = '#d1d5db'; }}
+              />
+              {nameError && (
+                <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '5px' }}>
+                  {nameError}
+                </p>
+              )}
+            </div>
+
+            {/* ── Company Password ── */}
+            <div className={pwTouched && !allRulesMet ? 'mb-3' : 'mb-6'}>
+              <label
+                htmlFor="companyPassword"
+                style={{ display: 'block', fontSize: '13px', color: '#374151', fontWeight: 500, marginBottom: '6px' }}
+              >
+                Company Password
+              </label>
+              <Input
+                id="companyPassword"
+                name="companyPassword"
+                type="password"
+                value={companyPassword}
+                onChange={handlePasswordChange}
+                placeholder="Enter Company Password"
+                eyeColor="#E05252"
+                disabled={verifyLoading}
+                autoComplete="new-password"
+              />
+            </div>
+
+            {/* ── Password rules ─────────────────────────────────────────
+                · Hidden before user types (pwTouched = false)
+                · Shown while any rule is unmet — each turns green as it passes
+                · Hidden again once ALL rules are met (clean UI before submit)
+            ──────────────────────────────────────────────────────────── */}
+            {pwTouched && !allRulesMet && (
+              <ul className="flex flex-col gap-2 mb-5 pl-0.5">
+                {rules.map((r) => (
+                  <PasswordRule key={r.key} passed={r.passed} label={r.label} />
+                ))}
+              </ul>
+            )}
+          </>
+        ) : (
+          <>
+            <div className="mb-4">
+              <Input
+                label="Email ID"
+                name="email"
+                type="email"
+                value={email}
+                onChange={handleEmailChange}
+                placeholder="Enter email id"
+                error={step2Errors.email}
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="mb-4">
+              <Input
+                label="First name"
+                name="firstName"
+                type="text"
+                value={firstName}
+                onChange={handleFirstNameChange}
+                placeholder="Enter First name"
+                error={step2Errors.firstName}
+                autoComplete="given-name"
+              />
+            </div>
+
+            <div className="mb-4">
+              <Input
+                label="Last name"
+                name="lastName"
+                type="text"
+                value={lastName}
+                onChange={handleLastNameChange}
+                placeholder="Enter Last name"
+                error={step2Errors.lastName}
+                autoComplete="family-name"
+              />
+            </div>
+
+            <div className="mb-6">
+              <Input
+                label="Company name"
+                name="companyNameStep2"
+                type="text"
+                value={companyName}
+                placeholder="Enter Company name"
+                error={step2Errors.companyName}
+                autoComplete="organization"
+                disabled
+              />
+            </div>
+          </>
+        )}
+
+        {/* ── Next button ────────────────────────────────────────────
+            DISABLED  → light gray bg, gray text, not-allowed cursor
+            ENABLED   → coral bg (#E05252), white text (#FEFEFE), pointer
+        ──────────────────────────────────────────────────────────── */}
+        <button
+          type="submit"
+          disabled={step === 1 ? !canSubmit || verifyLoading : verifyLoading}
+          style={{
+            display:         'flex',
+            alignItems:      'center',
+            justifyContent:  'center',
+            gap:             '8px',
+            width:           '100%',
+            padding:         '11px 0',
+            borderRadius:    '6px',
+            border:          'none',
+            fontSize:        '15px',
+            fontWeight:      600,
+            cursor:          step === 1
+              ? canSubmit && !verifyLoading ? 'pointer' : 'not-allowed'
+              : verifyLoading ? 'not-allowed' : 'pointer',
+            transition:      'background-color 0.2s, color 0.2s',
+            /* Enabled: coral / Disabled: light gray */
+            backgroundColor: step === 1
+              ? canSubmit && !verifyLoading ? '#E05252' : '#e5e7eb'
+              : verifyLoading ? '#e5e7eb' : '#E05252',
+            color:           step === 1
+              ? canSubmit && !verifyLoading ? '#FEFEFE' : '#9ca3af'
+              : verifyLoading ? '#9ca3af' : '#FEFEFE',
+          }}
+        >
+          {/* Spinner shown only during API call */}
+          {verifyLoading && (
+            <span
+              className="inline-block h-4 w-4 rounded-full border-2 animate-spin"
+              style={{ borderColor: 'rgba(255,255,255,0.35)', borderTopColor: '#fff' }}
+            />
+          )}
+          {verifyLoading ? 'Verifying…' : step === 1 ? 'Next' : 'Verify email'}
+        </button>
+
+      </form>
     </AuthLayout>
   );
 };

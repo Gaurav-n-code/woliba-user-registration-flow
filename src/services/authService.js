@@ -3,8 +3,24 @@
    Base URL: https://dev.woliba.io/v1/
    ────────────────────────────────────────── */
 import axiosInstance from '../api/axiosInstance';
+import { COMPANY_CREDENTIALS } from '../constants/credentials';
 
 const authService = {
+  /**
+   * Step 1 — Verify company name & password
+   * Local verification using static credentials.
+   */
+  verifyCompany: async ({ companyName, password }) => {
+    if (
+      companyName === COMPANY_CREDENTIALS.name &&
+      password === COMPANY_CREDENTIALS.password
+    ) {
+      return { verified: true };
+    }
+
+    throw new Error('Invalid company name or password.');
+  },
+
   /**
    * Login
    * POST /auth/login
@@ -24,23 +40,14 @@ const authService = {
   },
 
   /**
-   * Verify email OTP / token
-   * POST /auth/verify-email
-   */
-  verifyEmail: async ({ token }) => {
-    const { data } = await axiosInstance.post('auth/verify-email', { token });
-    return data;
-  },
-
-  /**
-   * Logout — invalidate server session if applicable
+   * Logout — invalidate server session
    * POST /auth/logout
    */
   logout: async () => {
     try {
       await axiosInstance.post('auth/logout');
     } catch (_) {
-      // Best-effort; clear client state regardless
+      // Best-effort; client state is cleared regardless
     }
   },
 };
