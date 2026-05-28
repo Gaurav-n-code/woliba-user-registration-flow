@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'https://woliba-user-registration-flow-be.onrender.com/v1/',
+  baseURL: 'https://dev.woliba.io/v1/',
   headers: {
     'Content-Type': 'application/json',
   },
