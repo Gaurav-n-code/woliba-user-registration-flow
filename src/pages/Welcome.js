@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useNavigate }              from 'react-router-dom';
-import { resetRegistration }        from '../redux/slices/authSlice';
 import wilibaLogo                   from '../assets/woliba-logo.png';
 import meditationImg                from '../assets/Rectangle 4545.png';
 
@@ -9,7 +8,6 @@ import meditationImg                from '../assets/Rectangle 4545.png';
    PAGE — Welcome Screen  (matches Figma Rectangle 4545)
 ══════════════════════════════════════════════════════════════ */
 const Welcome = () => {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const { registeredUser } = useSelector((s) => s.auth);
@@ -23,9 +21,7 @@ const Welcome = () => {
 
   const firstName = registeredUser.fname || '';
 
-  const handleGetStarted = () => {
-    dispatch(resetRegistration());
-  };
+  const handleGetStarted = () => navigate('/dashboard');
 
   return (
     <div
@@ -132,6 +128,7 @@ const Welcome = () => {
         {/* CTA button */}
         <button
           type="button"
+          onClick={handleGetStarted}
           style={{
             padding: '13px 48px', borderRadius: '8px',
             border: 'none', background: '#E05252', color: '#ffffff',

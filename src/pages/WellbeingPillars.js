@@ -118,7 +118,6 @@ const WellbeingPillars = () => {
     registrationForm,
     wellbeingPillarsLoading,
     wellbeingPillarsError,
-    completeRegLoading,
     completeRegError,
   } = useSelector((s) => s.auth);
 
@@ -206,7 +205,6 @@ const WellbeingPillars = () => {
           ? Array.from({ length: 12 }).map((_, i) => <SkeletonItem key={i} />)
           : wellbeingPillars.map((pillar) => {
               const order = getOrder(pillar.id);
-              const isSel = order > 0;
 
               return (
                 <button
