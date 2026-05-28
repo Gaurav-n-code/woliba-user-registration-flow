@@ -2,148 +2,149 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate }              from 'react-router-dom';
 import { resetRegistration }        from '../redux/slices/authSlice';
-import AuthLayout                   from '../components/layout/AuthLayout';
-
-/* ── Animated success checkmark ── */
-const SuccessIcon = () => (
-  <div
-    className="flex items-center justify-center mx-auto mb-6"
-    style={{
-      width: '80px', height: '80px', borderRadius: '50%',
-      background: 'linear-gradient(135deg, #E05252 0%, #f87171 100%)',
-      boxShadow: '0 8px 24px rgba(224,82,82,0.3)',
-    }}
-  >
-    <svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="#fff" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  </div>
-);
-
-/* ── User detail row ── */
-const DetailRow = ({ label, value }) => (
-  <div className="flex items-center justify-between py-2"
-    style={{ borderBottom: '1px solid #f3f4f6' }}>
-    <span className="text-sm" style={{ color: '#6b7280' }}>{label}</span>
-    <span className="text-sm font-semibold" style={{ color: '#184A61' }}>{value || '—'}</span>
-  </div>
-);
+import wilibaLogo                   from '../assets/woliba-logo.png';
+import meditationImg                from '../assets/Rectangle 4545.png';
 
 /* ══════════════════════════════════════════════════════════════
-   PAGE — Step 8: Welcome Screen
+   PAGE — Welcome Screen  (matches Figma Rectangle 4545)
 ══════════════════════════════════════════════════════════════ */
 const Welcome = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const { registeredUser, registrationForm } = useSelector((s) => s.auth);
+  const { registeredUser } = useSelector((s) => s.auth);
 
   /* Guard: must arrive here after successful registration */
   useEffect(() => {
     if (!registeredUser) navigate('/', { replace: true });
   }, [registeredUser, navigate]);
 
-  /* Derived display values */
-  const fullName  = registeredUser
-    ? `${registeredUser.fname} ${registeredUser.lname}`
-    : '';
-  const email     = registeredUser?.email     || registrationForm.email || '';
-  const uid       = registeredUser?.uid       || '';
-  const userName  = registeredUser?.user_name || '';
-  const companyId = registeredUser?.company_id || registrationForm.companyId || '';
-
-  const handleGoToDashboard = () => navigate('/dashboard');
-
-  const handleStartOver = () => {
-    dispatch(resetRegistration());
-    navigate('/');
-  };
-
   if (!registeredUser) return null;
 
+  const firstName = registeredUser.fname || '';
+
+  const handleGetStarted = () => {
+    dispatch(resetRegistration());
+  };
+
   return (
-    <AuthLayout cardStyle={{ maxWidth: '480px' }}>
-
-      {/* Success icon */}
-      <SuccessIcon />
-
-      {/* Heading */}
-      <h2
-        className="text-center font-bold mb-1"
-        style={{ color: '#184A61', fontSize: '24px' }}
-      >
-        Welcome, {registeredUser.fname}! 🎉
-      </h2>
-      <p className="text-center text-sm text-gray-400 mb-6">
-        Your Woliba account is ready. Let's start your wellness journey.
-      </p>
-
-      {/* User details card */}
-      <div
-        className="rounded-xl p-5 mb-6"
-        style={{ background: '#fafafa', border: '1px solid #f0f0f0' }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide mb-3"
-          style={{ color: '#E05252', letterSpacing: '0.08em' }}>
-          Account Details
-        </p>
-        <DetailRow label="Full Name"   value={fullName} />
-        <DetailRow label="Email"       value={email} />
-        <DetailRow label="Username"    value={userName} />
-        <DetailRow label="User ID"     value={uid} />
-        <DetailRow label="Company ID"  value={companyId} />
+    <div
+      style={{
+        minHeight:     '100vh',
+        background:    '#f2f2f2',
+        position:      'relative',
+        overflow:      'hidden',
+        display:       'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {/* ── Background glow blobs ── */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        {/* Green blob — bottom-left */}
+        <div style={{
+          position: 'absolute', width: '340px', height: '340px',
+          borderRadius: '50%', background: 'rgba(100, 210, 160, 0.28)',
+          filter: 'blur(80px)', bottom: '100px', left: '-60px',
+        }} />
+        {/* Yellow/cream blob — top-center */}
+        <div style={{
+          position: 'absolute', width: '280px', height: '280px',
+          borderRadius: '50%', background: 'rgba(255, 230, 130, 0.30)',
+          filter: 'blur(80px)', top: '60px', left: '50%', transform: 'translateX(-50%)',
+        }} />
+        {/* Blue-purple blob — right */}
+        <div style={{
+          position: 'absolute', width: '300px', height: '300px',
+          borderRadius: '50%', background: 'rgba(140, 160, 230, 0.28)',
+          filter: 'blur(80px)', top: '200px', right: '-40px',
+        }} />
       </div>
 
-      {/* Interests & Pillars summary */}
-      <div className="mb-6">
-        <div className="flex items-center gap-4">
-          <div
-            className="flex-1 rounded-xl p-4 text-center"
-            style={{ background: '#FFF5F5', border: '1px solid #fde8e8' }}
-          >
-            <p className="text-2xl font-bold" style={{ color: '#E05252' }}>
-              {registrationForm.selectedInterests.length}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Interests selected</p>
-          </div>
-          <div
-            className="flex-1 rounded-xl p-4 text-center"
-            style={{ background: '#F5F8FF', border: '1px solid #e0e8ff' }}
-          >
-            <p className="text-2xl font-bold" style={{ color: '#184A61' }}>3</p>
-            <p className="text-xs text-gray-500 mt-1">Wellbeing pillars</p>
-          </div>
+      {/* ── Top navigation bar ── */}
+      <header style={{
+        position: 'relative', zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '20px 36px',
+      }}>
+        <img src={wilibaLogo} alt="Woliba" style={{ height: '36px', objectFit: 'contain' }} />
+
+        {/* Language selector */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          fontSize: '13px', color: '#4b5563', cursor: 'pointer', userSelect: 'none',
+        }}>
+          <span style={{ fontSize: '12px', color: '#9ca3af' }}>Language</span>
+          <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
+            <rect width="20" height="14" rx="2" fill="#B22234" />
+            <rect y="1.08"  width="20" height="1.08" fill="white" />
+            <rect y="3.23"  width="20" height="1.08" fill="white" />
+            <rect y="5.38"  width="20" height="1.08" fill="white" />
+            <rect y="7.54"  width="20" height="1.08" fill="white" />
+            <rect y="9.69"  width="20" height="1.08" fill="white" />
+            <rect y="11.85" width="20" height="1.08" fill="white" />
+            <rect width="8" height="7.54" rx="2" fill="#3C3B6E" />
+          </svg>
+          <span style={{ fontWeight: 500 }}>En</span>
+          <svg width="12" height="12" fill="none" viewBox="0 0 24 24"
+            stroke="#6b7280" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
         </div>
-      </div>
+      </header>
 
-      {/* CTA buttons */}
-      <button
-        type="button"
-        onClick={handleGoToDashboard}
-        style={{
-          width: '100%', padding: '14px', borderRadius: '8px',
-          border: 'none', background: '#E05252', color: '#fff',
-          fontSize: '15px', fontWeight: 600, cursor: 'pointer',
-          marginBottom: '10px',
-          transition: 'background 0.15s',
-        }}
-      >
-        Go to Dashboard
-      </button>
+      {/* ── Main content ── */}
+      <main style={{
+        flex: 1, position: 'relative', zIndex: 10,
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        padding: '24px 24px 60px', textAlign: 'center',
+      }}>
 
-      <button
-        type="button"
-        onClick={handleStartOver}
-        style={{
-          width: '100%', padding: '12px', borderRadius: '8px',
-          border: '1px solid #e8e8e8', background: 'transparent',
-          color: '#6b7280', fontSize: '14px', cursor: 'pointer',
-        }}
-      >
-        Register another account
-      </button>
+        {/* Rectangle 4545 — exact Figma illustration */}
+        <img
+          src={meditationImg}
+          alt="wellness illustration"
+          style={{
+            width:        '100%',
+            maxWidth:     '398px',
+            height:       'auto',
+            maxHeight:    '266px',
+            objectFit:    'contain',
+            marginBottom: '28px',
+          }}
+        />
 
-    </AuthLayout>
+        {/* Welcome heading */}
+        <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#184A61', margin: '0 0 14px' }}>
+          Welcome {firstName}!
+        </h1>
+
+        {/* Description */}
+        <p style={{
+          fontSize: '14px', color: '#6b7280', lineHeight: '1.7',
+          maxWidth: '400px', margin: '0 0 32px',
+        }}>
+          Welcome to Woliba! You'll find wellness challenges, fitness and recipe
+          videos, and daily tips to support your health goals. Download our iOS or
+          Android app and start your wellbeing journey today.
+        </p>
+
+        {/* CTA button */}
+        <button
+          type="button"
+          style={{
+            padding: '13px 48px', borderRadius: '8px',
+            border: 'none', background: '#E05252', color: '#ffffff',
+            fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+            transition: 'background 0.15s', letterSpacing: '0.01em',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#c94444')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = '#E05252')}
+        >
+          Let's get Started
+        </button>
+      </main>
+    </div>
   );
 };
 

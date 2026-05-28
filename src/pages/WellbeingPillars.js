@@ -8,6 +8,7 @@ import {
 } from '../redux/slices/authSlice';
 import AuthLayout from '../components/layout/AuthLayout';
 import Alert      from '../components/common/Alert';
+import loaderVideo from '../assets/Loader scrren GIF.mp4';
 
 const MAX_PILLARS = 3;
 
@@ -62,28 +63,52 @@ const SkeletonItem = () => (
 );
 
 /* ══════════════════════════════════════════════════════════════
-   Full-screen loading overlay while registration API runs
+   Full-screen overlay — video centered, capped at 398 × 266 px
 ══════════════════════════════════════════════════════════════ */
-const Overlay = () => (
+const VideoLoader = () => (
   <div
-    className="fixed inset-0 z-50 flex flex-col items-center justify-center"
-    style={{ backgroundColor: 'rgba(255,255,255,0.92)' }}
+    className="fixed inset-0 z-50"
+    style={{
+      background:     '#f5f5f5',
+      display:        'flex',
+      flexDirection:  'column',
+      alignItems:     'center',
+      justifyContent: 'center',
+    }}
   >
-    <span
-      className="h-12 w-12 rounded-full border-4 animate-spin mb-4"
-      style={{ borderColor: '#f3f4f6', borderTopColor: '#E05252' }}
+    <video
+      src={loaderVideo}
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{
+        width:     '100%',
+        maxWidth:  '398px',
+        height:    'auto',
+        maxHeight: '266px',
+        objectFit: 'contain',
+      }}
     />
-    <p className="text-base font-semibold" style={{ color: '#184A61' }}>
-      Completing registration…
+    <p
+      style={{
+        fontFamily:    'Lato, sans-serif',
+        fontWeight:    700,
+        fontStyle:     'normal',
+        fontSize:      '24px',
+        lineHeight:    '30px',
+        letterSpacing: '0%',
+        color:         '#184A61',
+        margin:        '0',
+      }}
+    >
+      Getting your wellness journey ready...
     </p>
-    <p className="text-sm text-gray-400 mt-1">Please wait a moment</p>
   </div>
 );
 
 /* ══════════════════════════════════════════════════════════════
    PAGE — Step 6: Wellbeing Pillars
-   Matches Figma: 3-column grid of bordered cards, square checkbox
-   with order number, no disabling — extra clicks are silently ignored.
 ══════════════════════════════════════════════════════════════ */
 const WellbeingPillars = () => {
   const dispatch = useDispatch();
@@ -110,18 +135,17 @@ const WellbeingPillars = () => {
   }, [dispatch, wellbeingPillars.length]);
 
   /* ── Selection: ordered array of IDs (index 0 = first pick) ── */
-  const [selected, setSelected] = useState([]); // e.g. [4, 7, 2]
+  const [selected,    setSelected]    = useState([]);
+  const [showLoader,  setShowLoader]  = useState(false);
 
   const getOrder = (id) => {
     const idx = selected.indexOf(id);
-    return idx === -1 ? 0 : idx + 1; // 0 = not selected; 1/2/3 = order
+    return idx === -1 ? 0 : idx + 1;
   };
 
   const togglePillar = (id) => {
     setSelected((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter((x) => x !== id);
-      }
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
       if (prev.length >= MAX_PILLARS) return prev;
       return [...prev, id];
     });
@@ -129,21 +153,30 @@ const WellbeingPillars = () => {
 
   const allThreeSelected = selected.length === MAX_PILLARS;
 
-  /* ── Final submit ── */
+  /* ── Final submit — show video for ≥ 2 s while API runs ── */
   const handleDone = async () => {
-    if (!allThreeSelected || completeRegLoading) return;
+    if (!allThreeSelected || showLoader) return;
+    setShowLoader(true);
     dispatch(setSelectedPillars(selected));
+
+    const minDelay = new Promise((r) => setTimeout(r, 2000));
     try {
-      await dispatch(completeRegistration()).unwrap();
+      await Promise.all([
+        dispatch(completeRegistration()).unwrap(),
+        minDelay,
+      ]);
       navigate('/welcome');
-    } catch (_) { /* completeRegError shown via Alert */ }
+    } catch (_) {
+      setShowLoader(false); /* hide loader; completeRegError shown via Alert */
+    }
   };
 
   /* ── Render ── */
   return (
     <AuthLayout cardStyle={{ maxWidth: '960px' }}>
 
-      {completeRegLoading && <Overlay />}
+      {/* Video loader — full-screen while processing */}
+      {showLoader && <VideoLoader />}
 
       {/* Title */}
       <h2
@@ -172,8 +205,8 @@ const WellbeingPillars = () => {
         {wellbeingPillarsLoading && wellbeingPillars.length === 0
           ? Array.from({ length: 12 }).map((_, i) => <SkeletonItem key={i} />)
           : wellbeingPillars.map((pillar) => {
-              const order  = getOrder(pillar.id);
-              const isSel  = order > 0;
+              const order = getOrder(pillar.id);
+              const isSel = order > 0;
 
               return (
                 <button
@@ -181,23 +214,19 @@ const WellbeingPillars = () => {
                   type="button"
                   onClick={() => togglePillar(pillar.id)}
                   style={{
-                    display:       'flex',
-                    alignItems:    'flex-start',
-                    gap:           '12px',
-                    background:    '#ffffff',
-                    border:        '1px solid #e5e7eb',
-                    borderRadius:  '10px',
-                    padding:       '14px 16px',
-                    cursor:        'pointer',
-                    textAlign:     'left',
-                    transition:    'border-color 0.15s, box-shadow 0.15s',
-                    boxShadow:     isSel ? '0 0 0 1px #e5e7eb' : 'none',
+                    display:      'flex',
+                    alignItems:   'flex-start',
+                    gap:          '12px',
+                    background:   '#ffffff',
+                    border:       '1px solid #e5e7eb',
+                    borderRadius: '10px',
+                    padding:      '14px 16px',
+                    cursor:       'pointer',
+                    textAlign:    'left',
+                    transition:   'border-color 0.15s',
                   }}
                 >
-                  {/* Square checkbox / number badge */}
                   <PillarCheckbox orderNumber={order} />
-
-                  {/* Text */}
                   <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <span
                       style={{
@@ -231,7 +260,7 @@ const WellbeingPillars = () => {
         <button
           type="button"
           onClick={() => navigate(-1)}
-          disabled={completeRegLoading}
+          disabled={showLoader}
           style={{
             display:        'flex',
             alignItems:     'center',
@@ -245,8 +274,8 @@ const WellbeingPillars = () => {
             color:          '#E05252',
             fontSize:       '14px',
             fontWeight:     500,
-            cursor:         completeRegLoading ? 'not-allowed' : 'pointer',
-            opacity:        completeRegLoading ? 0.5 : 1,
+            cursor:         showLoader ? 'not-allowed' : 'pointer',
+            opacity:        showLoader ? 0.5 : 1,
           }}
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
@@ -260,7 +289,7 @@ const WellbeingPillars = () => {
         <button
           type="button"
           onClick={handleDone}
-          disabled={!allThreeSelected || completeRegLoading}
+          disabled={!allThreeSelected || showLoader}
           style={{
             display:        'flex',
             alignItems:     'center',
@@ -270,21 +299,15 @@ const WellbeingPillars = () => {
             padding:        '13px 20px',
             borderRadius:   '8px',
             border:         'none',
-            background:     allThreeSelected && !completeRegLoading ? '#E05252' : '#d1d5db',
+            background:     allThreeSelected && !showLoader ? '#E05252' : '#d1d5db',
             color:          '#ffffff',
             fontSize:       '14px',
             fontWeight:     600,
-            cursor:         allThreeSelected && !completeRegLoading ? 'pointer' : 'not-allowed',
+            cursor:         allThreeSelected && !showLoader ? 'pointer' : 'not-allowed',
             transition:     'background 0.2s ease',
           }}
         >
-          {completeRegLoading && (
-            <span
-              className="inline-block h-4 w-4 rounded-full border-2 animate-spin"
-              style={{ borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }}
-            />
-          )}
-          {completeRegLoading ? 'Processing…' : 'Done'}
+          Done
         </button>
       </div>
 
