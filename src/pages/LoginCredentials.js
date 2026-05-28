@@ -26,7 +26,6 @@ const LoginCredentials = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [birthday,        setBirthday]        = useState(registrationForm.birthday        || '');
   const [contact,         setContact]         = useState(registrationForm.phoneNumber     || '');
-  const [workAnniversary, setWorkAnniversary] = useState(registrationForm.workAnniversary || '');
   const [agree,           setAgree]           = useState(registrationForm.termsAccepted   || false);
   const [errors,          setErrors]          = useState({});
 
@@ -61,7 +60,6 @@ const LoginCredentials = () => {
       password,
       birthday,           // stored as MM/DD/YYYY; converted in completeRegistration thunk
       phoneNumber:     contact,
-      workAnniversary: workAnniversary || '',
       termsAccepted:   agree,
     }));
 
