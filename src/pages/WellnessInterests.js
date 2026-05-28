@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector }            from 'react-redux';
-import { useNavigate }                         from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch, useSelector }                    from 'react-redux';
+import { useNavigate }                                 from 'react-router-dom';
 import {
   fetchWellnessInterests,
   setSelectedInterests,
@@ -19,55 +19,55 @@ import {
   IconRockClimbing, IconArchery, IconEquestrian, IconFencing, IconShooting,
 } from '../components/common/WellnessIcons';
 
-/* ── Icon resolver — maps interest name keywords → SVG component ── */
+/* ── Icon resolver ── */
 const getIconForName = (name) => {
   const n = name.toLowerCase();
-  if (n.includes('aerob'))                          return IconAerobics;
-  if (n.includes('ballet') || n.includes('aerial')) return IconBallet;
-  if (n.includes('cali'))                           return IconCalisthenics;
-  if (n.includes('dance'))                          return IconDance;
-  if (n.includes('gymnast') || n.includes('acrobat')) return IconGymnastics;
-  if (n.includes('hik'))                            return IconHiking;
-  if (n.includes('obstacle'))                       return IconObstacleRacing;
-  if (n.includes('pilat'))                          return IconPilates;
-  if (n.includes('run'))                            return IconRunning;
-  if (n.includes('walk'))                           return IconWalking;
-  if (n.includes('yoga'))                           return IconYoga;
-  if (n.includes('basket'))                         return IconBasketball;
-  if (n.includes('soccer') || n.includes('football')) return IconSoccer;
-  if (n.includes('tennis'))                         return IconTennis;
-  if (n.includes('volley'))                         return IconVolleyball;
-  if (n.includes('baseball'))                       return IconBaseball;
-  if (n.includes('golf'))                           return IconGolf;
-  if (n.includes('rugby'))                          return IconRugby;
-  if (n.includes('cycl'))                           return IconCycling;
-  if (n.includes('skateboard'))                     return IconSkateboarding;
-  if (n.includes('roller'))                         return IconRollerblading;
-  if (n.includes('mountain'))                       return IconMountainBiking;
-  if (n.includes('box'))                            return IconBoxing;
-  if (n.includes('wrest'))                          return IconWrestling;
-  if (n.includes('martial') || n.includes('judo') || n.includes('karat')) return IconMartialArts;
+  if (n.includes('aerob'))                                                   return IconAerobics;
+  if (n.includes('ballet') || n.includes('aerial'))                         return IconBallet;
+  if (n.includes('cali'))                                                    return IconCalisthenics;
+  if (n.includes('dance'))                                                   return IconDance;
+  if (n.includes('gymnast') || n.includes('acrobat'))                       return IconGymnastics;
+  if (n.includes('hik'))                                                     return IconHiking;
+  if (n.includes('obstacle'))                                                return IconObstacleRacing;
+  if (n.includes('pilat'))                                                   return IconPilates;
+  if (n.includes('run'))                                                     return IconRunning;
+  if (n.includes('walk'))                                                    return IconWalking;
+  if (n.includes('yoga'))                                                    return IconYoga;
+  if (n.includes('basket'))                                                  return IconBasketball;
+  if (n.includes('soccer') || n.includes('football'))                       return IconSoccer;
+  if (n.includes('tennis'))                                                  return IconTennis;
+  if (n.includes('volley'))                                                  return IconVolleyball;
+  if (n.includes('baseball'))                                                return IconBaseball;
+  if (n.includes('golf'))                                                    return IconGolf;
+  if (n.includes('rugby'))                                                   return IconRugby;
+  if (n.includes('cycl'))                                                    return IconCycling;
+  if (n.includes('skateboard'))                                              return IconSkateboarding;
+  if (n.includes('roller'))                                                  return IconRollerblading;
+  if (n.includes('mountain'))                                                return IconMountainBiking;
+  if (n.includes('box'))                                                     return IconBoxing;
+  if (n.includes('wrest'))                                                   return IconWrestling;
+  if (n.includes('martial') || n.includes('judo') || n.includes('karat'))  return IconMartialArts;
   if (n.includes('weight') || (n.includes('lift') && !n.includes('power'))) return IconWeightLifting;
   if (n.includes('crossfit') || (n.includes('cross') && n.includes('fit'))) return IconCrossfit;
-  if (n.includes('kettle'))                         return IconKettlebell;
-  if (n.includes('power'))                          return IconPowerlifting;
-  if (n.includes('bodyb') || (n.includes('body') && n.includes('build'))) return IconBodybuilding;
-  if (n.includes('ski') && !n.includes('snow') && !n.includes('ice')) return IconSkiing;
-  if (n.includes('snowboard'))                      return IconSnowboarding;
-  if (n.includes('ice') || n.includes('skat'))      return IconIceSkating;
-  if (n.includes('hockey'))                         return IconHockey;
-  if (n.includes('curl'))                           return IconCurling;
-  if (n.includes('swim'))                           return IconSwimming;
-  if (n.includes('surf'))                           return IconSurfing;
-  if (n.includes('kayak'))                          return IconKayaking;
-  if (n.includes('div'))                            return IconDiving;
-  if (n.includes('row'))                            return IconRowing;
-  if (n.includes('climb') || n.includes('rock'))    return IconRockClimbing;
-  if (n.includes('arch'))                           return IconArchery;
-  if (n.includes('eque') || n.includes('horse'))    return IconEquestrian;
-  if (n.includes('fenc'))                           return IconFencing;
-  if (n.includes('shoot'))                          return IconShooting;
-  return IconRunning; // default fallback
+  if (n.includes('kettle'))                                                  return IconKettlebell;
+  if (n.includes('power'))                                                   return IconPowerlifting;
+  if (n.includes('bodyb') || (n.includes('body') && n.includes('build')))  return IconBodybuilding;
+  if (n.includes('ski') && !n.includes('snow') && !n.includes('ice'))      return IconSkiing;
+  if (n.includes('snowboard'))                                               return IconSnowboarding;
+  if (n.includes('ice') || n.includes('skat'))                              return IconIceSkating;
+  if (n.includes('hockey'))                                                  return IconHockey;
+  if (n.includes('curl'))                                                    return IconCurling;
+  if (n.includes('swim'))                                                    return IconSwimming;
+  if (n.includes('surf'))                                                    return IconSurfing;
+  if (n.includes('kayak'))                                                   return IconKayaking;
+  if (n.includes('div'))                                                     return IconDiving;
+  if (n.includes('row'))                                                     return IconRowing;
+  if (n.includes('climb') || n.includes('rock'))                            return IconRockClimbing;
+  if (n.includes('arch'))                                                    return IconArchery;
+  if (n.includes('eque') || n.includes('horse'))                            return IconEquestrian;
+  if (n.includes('fenc'))                                                    return IconFencing;
+  if (n.includes('shoot'))                                                   return IconShooting;
+  return IconRunning;
 };
 
 /* ── Chevron ── */
@@ -75,7 +75,7 @@ const Chevron = ({ open }) => (
   <svg
     style={{
       width: '16px', height: '16px', flexShrink: 0,
-      transition: 'transform 0.2s ease',
+      transition: 'transform 0.25s ease',
       transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
     }}
     fill="none" viewBox="0 0 24 24" stroke="#E05252" strokeWidth={2.5}
@@ -116,7 +116,7 @@ const WellnessInterests = () => {
     if (wellnessInterests.length === 0) dispatch(fetchWellnessInterests());
   }, [dispatch, wellnessInterests.length]);
 
-  /* ── Group interests by interest_type ── */
+  /* ── Group by interest_type ── */
   const categories = useMemo(() => {
     const map = {};
     wellnessInterests.forEach((item) => {
@@ -128,16 +128,27 @@ const WellnessInterests = () => {
 
   /* ── Single-open accordion ── */
   const [openLabel, setOpenLabel] = useState(null);
+  const rowRefs = useRef({});                              // for smooth scroll
+
   useEffect(() => {
-    if (categories.length > 0 && openLabel === null) {
+    if (categories.length > 0 && openLabel === null)
       setOpenLabel(categories[0].label);
-    }
   }, [categories, openLabel]);
 
-  const toggleCategory = (label) =>
-    setOpenLabel((prev) => (prev === label ? null : label));
+  const toggleCategory = (label) => {
+    setOpenLabel((prev) => {
+      const next = prev === label ? null : label;
+      if (next) {
+        /* Smooth-scroll the opened row into view after state settles */
+        setTimeout(() => {
+          rowRefs.current[next]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 60);
+      }
+      return next;
+    });
+  };
 
-  /* ── Multi-select (Set of API numeric IDs) ── */
+  /* ── Multi-select ── */
   const [selected, setSelected] = useState(() => new Set(storedSelected));
 
   const toggleItem = (id) =>
@@ -159,11 +170,15 @@ const WellnessInterests = () => {
 
   /* ── Render ── */
   return (
-    <AuthLayout cardStyle={{ maxWidth: '1330px' }}>
+    <AuthLayout cardStyle={{ maxWidth: '900px' }}>
 
       <h2
         className="text-center font-bold mb-5"
-        style={{ color: '#184A61', fontSize: '17px', lineHeight: '1.5' }}
+        style={{
+          color: '#184A61',
+          fontSize: 'clamp(14px, 3vw, 17px)',
+          lineHeight: '1.5',
+        }}
       >
         Select all wellness interests that apply&nbsp;— at least one is required.
       </h2>
@@ -182,16 +197,21 @@ const WellnessInterests = () => {
           : categories.map(({ label, items }) => {
               const isOpen = openLabel === label;
               return (
-                <div key={label} style={{ borderBottom: '1px solid #f3f4f6' }}>
-
+                <div
+                  key={label}
+                  ref={(el) => { rowRefs.current[label] = el; }}
+                  style={{ borderBottom: '1px solid #f3f4f6' }}
+                >
                   {/* Category header */}
                   <button
                     type="button"
                     onClick={() => toggleCategory(label)}
                     style={{
                       width: '100%', display: 'flex', alignItems: 'center',
-                      justifyContent: 'space-between', padding: '14px 0',
-                      background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      justifyContent: 'space-between',
+                      padding: '14px 0',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      textAlign: 'left',
                     }}
                   >
                     <span style={{ fontSize: '13.5px', color: '#6b7280', fontWeight: 400 }}>
@@ -200,11 +220,18 @@ const WellnessInterests = () => {
                     <Chevron open={isOpen} />
                   </button>
 
-                  {/* Pills */}
+                  {/* Pills — animated slide */}
                   {isOpen && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', paddingBottom: '16px' }}>
+                    <div
+                      style={{
+                        display:       'flex',
+                        flexWrap:      'wrap',
+                        gap:           '8px',
+                        paddingBottom: '16px',
+                      }}
+                    >
                       {items.map((item) => {
-                        const sel = selected.has(item.id);
+                        const sel  = selected.has(item.id);
                         const Icon = getIconForName(item.name);
                         return (
                           <button
@@ -212,16 +239,22 @@ const WellnessInterests = () => {
                             type="button"
                             onClick={() => toggleItem(item.id)}
                             style={{
-                              display: 'flex', alignItems: 'center', gap: '7px',
-                              padding: '6px 14px 6px 10px', borderRadius: '999px',
-                              border:     `1.5px solid ${sel ? '#E05252' : '#e8e8e8'}`,
-                              background: sel ? '#E05252' : '#ffffff',
-                              color:      sel ? '#ffffff' : '#184A61',
-                              fontSize: '13px', fontWeight: 500, cursor: 'pointer',
-                              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-                              whiteSpace: 'nowrap', lineHeight: 1,
-                              boxShadow: sel ? 'none' : '0 1px 4px rgba(0,0,0,0.07)',
-                              outline: 'none',
+                              display:    'flex',
+                              alignItems: 'center',
+                              gap:        '7px',
+                              padding:    '6px 14px 6px 10px',
+                              borderRadius: '999px',
+                              border:       `1.5px solid ${sel ? '#E05252' : '#e8e8e8'}`,
+                              background:   sel ? '#E05252' : '#ffffff',
+                              color:        sel ? '#ffffff' : '#184A61',
+                              fontSize:     '13px',
+                              fontWeight:   500,
+                              cursor:       'pointer',
+                              transition:   'background 0.15s, border-color 0.15s, color 0.15s',
+                              whiteSpace:   'nowrap',
+                              lineHeight:   1,
+                              boxShadow:    sel ? 'none' : '0 1px 4px rgba(0,0,0,0.07)',
+                              outline:      'none',
                             }}
                           >
                             <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -246,19 +279,22 @@ const WellnessInterests = () => {
         </p>
       )}
 
-      {/* Navigation */}
-      <div className="flex items-center justify-center gap-2 mt-6">
+      {/* ── Navigation — stacked on mobile, side-by-side on sm+ ── */}
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3 mt-6">
+
         <button
           type="button"
           onClick={handleBack}
+          className="w-full sm:w-40"
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
-            width: '150px', padding: '14px 20px', borderRadius: '8px',
-            border: '1px solid #E05252', background: 'transparent',
-            color: '#E05252', fontSize: '15px', cursor: 'pointer',
+            padding: '13px 20px', borderRadius: '8px',
+            border: '1.5px solid #E05252', background: 'transparent',
+            color: '#E05252', fontSize: '14px', fontWeight: 500, cursor: 'pointer',
           }}
         >
-          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
           Back
@@ -268,10 +304,11 @@ const WellnessInterests = () => {
           type="button"
           onClick={handleNext}
           disabled={!hasAnySelection}
+          className="w-full sm:w-40"
           style={{
-            width: '150px', padding: '14px 20px', borderRadius: '8px', border: 'none',
+            padding: '13px 20px', borderRadius: '8px', border: 'none',
             background: hasAnySelection ? '#E05252' : '#d1d5db',
-            color: '#ffffff', fontSize: '15px', fontWeight: 600,
+            color: '#ffffff', fontSize: '14px', fontWeight: 600,
             cursor: hasAnySelection ? 'pointer' : 'not-allowed',
             transition: 'background 0.15s ease',
           }}

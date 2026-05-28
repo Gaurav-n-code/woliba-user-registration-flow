@@ -132,18 +132,6 @@ const LoginCredentials = () => {
             error={errors.contact}
           />
         </div>
-
-        {/* Work Anniversary (optional) */}
-        <div>
-          <DatePicker
-            label="Work Anniversary (optional)"
-            value={workAnniversary}
-            onChange={(val) => setWorkAnniversary(val)}
-            placeholder="Select work anniversary [MM/DD/YYYY]"
-            maxYear={new Date().getFullYear()}
-          />
-        </div>
-
         {/* Terms */}
         <div className="flex items-center gap-3 mt-1">
           <input

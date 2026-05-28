@@ -101,7 +101,7 @@ const ILLUSTRATIONS = [
 
 const AuthLayout = ({ children, cardStyle = {} }) => {
   return (
-    <div className="relative h-screen flex flex-col overflow-hidden bg-white">
+    <div className="relative min-h-screen flex flex-col bg-white">
 
       {/* ══ ILLUSTRATION LAYER (z-0, pointer-events-none) ══════════ */}
       <div
@@ -130,10 +130,10 @@ const AuthLayout = ({ children, cardStyle = {} }) => {
         <LanguageSelector />
       </header>
 
-      {/* ══ AUTH CARD (z-10, vertically + horizontally centred) ════ */}
-      <main className="relative z-10 flex-1 flex items-center justify-center px-4">
+      {/* ══ AUTH CARD (z-10, centred; scrollable on mobile) ═══════ */}
+      <main className="relative z-10 flex-1 flex items-start sm:items-center justify-center px-4 py-6 sm:py-4">
         <div
-          className="w-full bg-white rounded-xl px-8 py-10"
+          className="w-full bg-white rounded-xl px-5 sm:px-8 py-8 sm:py-10"
           style={{
             maxWidth       : "360px",
             boxShadow      : "0 2px 24px 0 rgba(0,0,0,0.09)",

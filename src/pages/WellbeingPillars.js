@@ -47,11 +47,7 @@ const PillarCheckbox = ({ orderNumber }) => {
 ══════════════════════════════════════════════════════════════ */
 const SkeletonItem = () => (
   <div
-    style={{
-      border:       '1px solid #e5e7eb',
-      borderRadius: '10px',
-      padding:      '14px 16px',
-    }}
+    style={{ border: '1px solid #e5e7eb', borderRadius: '10px', padding: '14px 16px' }}
     className="flex items-start gap-3 animate-pulse"
   >
     <span className="w-[22px] h-[22px] rounded bg-gray-100 shrink-0 mt-0.5" />
@@ -63,18 +59,12 @@ const SkeletonItem = () => (
 );
 
 /* ══════════════════════════════════════════════════════════════
-   Full-screen overlay — video centered, capped at 398 × 266 px
+   Full-screen overlay — video + text centered, responsive size
 ══════════════════════════════════════════════════════════════ */
 const VideoLoader = () => (
   <div
-    className="fixed inset-0 z-50"
-    style={{
-      background:     '#f5f5f5',
-      display:        'flex',
-      flexDirection:  'column',
-      alignItems:     'center',
-      justifyContent: 'center',
-    }}
+    className="fixed inset-0 z-50 flex flex-col items-center justify-center px-4"
+    style={{ background: '#f5f5f5' }}
   >
     <video
       src={loaderVideo}
@@ -94,12 +84,13 @@ const VideoLoader = () => (
       style={{
         fontFamily:    'Lato, sans-serif',
         fontWeight:    700,
-        fontStyle:     'normal',
-        fontSize:      '24px',
-        lineHeight:    '30px',
-        letterSpacing: '0%',
+        fontSize:      'clamp(16px, 4vw, 24px)',
+        lineHeight:    '1.4',
+        letterSpacing: '0',
         color:         '#184A61',
         margin:        '0',
+        textAlign:     'center',
+        padding:       '0 8px',
       }}
     >
       Getting your wellness journey ready...
@@ -133,9 +124,9 @@ const WellbeingPillars = () => {
     if (wellbeingPillars.length === 0) dispatch(fetchWellbeingPillars());
   }, [dispatch, wellbeingPillars.length]);
 
-  /* ── Selection: ordered array of IDs (index 0 = first pick) ── */
-  const [selected,    setSelected]    = useState([]);
-  const [showLoader,  setShowLoader]  = useState(false);
+  /* ── Selection: ordered array of IDs ── */
+  const [selected,   setSelected]   = useState([]);
+  const [showLoader, setShowLoader] = useState(false);
 
   const getOrder = (id) => {
     const idx = selected.indexOf(id);
@@ -160,13 +151,10 @@ const WellbeingPillars = () => {
 
     const minDelay = new Promise((r) => setTimeout(r, 2000));
     try {
-      await Promise.all([
-        dispatch(completeRegistration()).unwrap(),
-        minDelay,
-      ]);
+      await Promise.all([dispatch(completeRegistration()).unwrap(), minDelay]);
       navigate('/welcome');
     } catch (_) {
-      setShowLoader(false); /* hide loader; completeRegError shown via Alert */
+      setShowLoader(false);
     }
   };
 
@@ -179,8 +167,8 @@ const WellbeingPillars = () => {
 
       {/* Title */}
       <h2
-        className="text-center font-bold mb-8"
-        style={{ color: '#184A61', fontSize: '20px', lineHeight: '1.4' }}
+        className="text-center font-bold mb-6 sm:mb-8"
+        style={{ color: '#184A61', fontSize: 'clamp(15px, 3vw, 20px)', lineHeight: '1.4' }}
       >
         Select any 3 well-being pillars goal you want to achieve
       </h2>
@@ -192,20 +180,12 @@ const WellbeingPillars = () => {
         </div>
       )}
 
-      {/* Pillar grid */}
-      <div
-        style={{
-          display:             'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap:                 '16px',
-          marginBottom:        '36px',
-        }}
-      >
+      {/* ── Pillar grid — 1 col mobile / 2 col tablet / 3 col desktop ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-9">
         {wellbeingPillarsLoading && wellbeingPillars.length === 0
-          ? Array.from({ length: 12 }).map((_, i) => <SkeletonItem key={i} />)
+          ? Array.from({ length: 6 }).map((_, i) => <SkeletonItem key={i} />)
           : wellbeingPillars.map((pillar) => {
               const order = getOrder(pillar.id);
-
               return (
                 <button
                   key={pillar.id}
@@ -221,28 +201,16 @@ const WellbeingPillars = () => {
                     padding:      '14px 16px',
                     cursor:       'pointer',
                     textAlign:    'left',
+                    width:        '100%',
                     transition:   'border-color 0.15s',
                   }}
                 >
                   <PillarCheckbox orderNumber={order} />
                   <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <span
-                      style={{
-                        fontSize:   '14px',
-                        fontWeight: 600,
-                        color:      '#184A61',
-                        lineHeight: '1.3',
-                      }}
-                    >
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: '#184A61', lineHeight: '1.3' }}>
                       {pillar.pillar_title}
                     </span>
-                    <span
-                      style={{
-                        fontSize:   '12px',
-                        color:      '#9ca3af',
-                        lineHeight: '1.5',
-                      }}
-                    >
+                    <span style={{ fontSize: '12px', color: '#9ca3af', lineHeight: '1.5' }}>
                       {pillar.description}
                     </span>
                   </span>
@@ -252,19 +220,20 @@ const WellbeingPillars = () => {
         }
       </div>
 
-      {/* Bottom navigation — Back + Done */}
-      <div className="flex items-center justify-center gap-3">
+      {/* ── Bottom navigation — stacks on mobile, side-by-side on sm+ ── */}
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-3">
+
         {/* Back */}
         <button
           type="button"
           onClick={() => navigate(-1)}
           disabled={showLoader}
+          className="w-full sm:w-40"
           style={{
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
             gap:            '6px',
-            width:          '160px',
             padding:        '13px 20px',
             borderRadius:   '8px',
             border:         '1.5px solid #E05252',
@@ -288,12 +257,11 @@ const WellbeingPillars = () => {
           type="button"
           onClick={handleDone}
           disabled={!allThreeSelected || showLoader}
+          className="w-full sm:w-40"
           style={{
             display:        'flex',
             alignItems:     'center',
             justifyContent: 'center',
-            gap:            '8px',
-            width:          '160px',
             padding:        '13px 20px',
             borderRadius:   '8px',
             border:         'none',
